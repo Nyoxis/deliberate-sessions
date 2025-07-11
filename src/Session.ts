@@ -74,11 +74,8 @@ export default class Session {
           session = await this.createSession(store, expireAfterSeconds)
         }
       }
-
-
       // update _access time
       session.set('_accessed', new Date().toISOString())
-      await cookies.set(sessionCookieName, session.sid, cookieSetOptions)
       // return session to ctx.state so user can interact (set, get) with it
       return session
     }
@@ -98,7 +95,7 @@ export default class Session {
           store.deleteSession(cookies)
         } else {
           await store.deleteSession(session.sid)
-          await cookies.delete(sessionCookieName, cookieSetOptions)
+          await cookies.set(sessionCookieName, "", { expires: new Date(0) })
         }
       }
     }
