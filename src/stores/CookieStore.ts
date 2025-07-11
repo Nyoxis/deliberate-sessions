@@ -1,5 +1,5 @@
 import { encryptCryptoJSAES, decryptCryptoJSAES } from '../crypto.ts';
-import type { Context, CookiesGetOptions, CookiesSetDeleteOptions } from '../../deps.ts'
+import type { CookiesGetOptions, CookiesSetDeleteOptions, Cookies } from '../../deps.ts'
 import type { SessionData } from '../Session.ts'
 
 interface CookieStoreOptions {
@@ -23,8 +23,8 @@ export default class CookieStore {
     this.sessionDataCookieName = options?.sessionDataCookieName ?? 'session_data'
   }
 
-  async getSessionByCtx(ctx : Context) : Promise<SessionData | null> {
-    const sessionDataString : string | undefined = await ctx.cookies.get(this.sessionDataCookieName, this.cookieGetOptions)
+  async getSessionFromCookie(cookies : Cookies) : Promise<SessionData | null> {
+    const sessionDataString : string | undefined = await cookies.get(this.sessionDataCookieName, this.cookieGetOptions)
 
     if (!sessionDataString) return null;
 
@@ -37,21 +37,21 @@ export default class CookieStore {
 
   }
 
-  async createSession(ctx : Context, initialData : SessionData) {
+  async createSession(cookies : Cookies, initialData : SessionData) {
     const dataString = JSON.stringify(initialData)
 
     const encryptedCookie = await encryptCryptoJSAES(dataString, this.encryptionKey)
-    await ctx.cookies.set(this.sessionDataCookieName, encryptedCookie, this.cookieSetDeleteOptions)
+    await cookies.set(this.sessionDataCookieName, encryptedCookie, this.cookieSetDeleteOptions)
   }
 
-  deleteSession(ctx : Context) {
-    ctx.cookies.delete(this.sessionDataCookieName, this.cookieSetDeleteOptions)
+  deleteSession(cookies : Cookies) {
+    cookies.delete(this.sessionDataCookieName, this.cookieSetDeleteOptions)
   }
 
-  async persistSessionData(ctx : Context, data : SessionData) {
+  async persistSessionData(cookies : Cookies, data : SessionData) {
     const dataString = JSON.stringify(data)
 
     const encryptedCookie = await encryptCryptoJSAES(dataString, this.encryptionKey)
-    await ctx.cookies.set(this.sessionDataCookieName, encryptedCookie, this.cookieSetDeleteOptions)
+    await cookies.set(this.sessionDataCookieName, encryptedCookie, this.cookieSetDeleteOptions)
   }
 }

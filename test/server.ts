@@ -16,26 +16,31 @@ const router = new Router<AppState>();
 // Instantiate session
 const store = await makeStore()
 // const session = new Session(store)
-
-// Apply sessions to your Oak application. You can also apply the middleware to specific routes instead of the whole app.
-app.use(Session.initMiddleware(store, {
-    cookieSetOptions: {
-        sameSite: 'lax'
+const { fetchSession, storeState, createSession } = Session.initSessionsHandlers(store,
+    {
+        cookieSetOptions: {
+            sameSite: 'lax'
+        }
     }
-}))
+)
+// Apply sessions to your Oak application. You can also apply the middleware to specific routes instead of the whole app.
+app.use(async (ctx, next) => {
+    const session = await fetchSession(ctx.cookies);
+    if (session) {
+        ctx.state.session = session
+    }
+    await next();
+    await storeState(ctx.state.session, ctx.cookies)
+})
 
 router.post('/login', async (ctx) => {
   const form = await ctx.request.body.form()
     if(form.get('password') === 'correct') {
+        ctx.state.session = await createSession(ctx.cookies);
         // Set persistent data in the session
         ctx.state.session.set('email', form.get('email'))
-        ctx.state.session.set('failed-login-attempts', null)
         // Set flash data in the session. This will be removed the first time it's accessed with get
         ctx.state.session.flash('message', 'Login successful')
-    } else {
-        const failedLoginAttempts = (await ctx.state.session.get('failed-login-attempts') || 0) as number
-        ctx.state.session.set('failed-login-attempts', failedLoginAttempts+1)
-        ctx.state.session.flash('error', 'Incorrect username or password')
     }
     ctx.response.redirect('/')
 })
@@ -47,10 +52,9 @@ router.post('/logout', async (ctx) => {
 })
 
 router.get("/", async (ctx) => {
-    const message = await ctx.state.session.get('message') || ''
-    const error = await ctx.state.session.get('error') || ''
-    const failedLoginAttempts = await ctx.state.session.get('failed-login-attempts')
-    const email = await ctx.state.session.get('email')
+    const message = await ctx.state.session?.get('message') || ''
+    const error = await ctx.state.session?.get('error') || ''
+    const email = await ctx.state.session?.get('email')
     ctx.response.body = `<!DOCTYPE html>
     <body>
         <p id="message">
@@ -58,9 +62,6 @@ router.get("/", async (ctx) => {
         </p>
         <p id="error">
             ${error}
-        </p>
-        <p id="failed-login-attempts">
-            ${failedLoginAttempts ? `Failed login attempts: ${failedLoginAttempts}` : ''}
         </p>
 
         ${email ? 
