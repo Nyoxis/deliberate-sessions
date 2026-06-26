@@ -13,7 +13,7 @@ const app = new Hono()
 const db = new Database('./tmp/database.sqlite')
 const sql = (fragments: any, ...values: any[]) => {
   const statement = SQL(fragments, ...values)
-  return db.prepare(statement.sql).values(...statement.values)
+  return db.prepare(statement.sql).all(...statement.values)
 }
 const store = new SqliteStore(sql)
 

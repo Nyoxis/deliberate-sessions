@@ -24,10 +24,10 @@ class SqliteStore implements Store {
     let session = ''
 
     for (
-      const [sess] of this
+      const row of this
         .sql`SELECT data FROM __TABLE__ WHERE id = ${sessionId}`
     ) {
-      session = sess
+      session = row.data
     }
 
     return session ? JSON.parse(session) as SessionData : null

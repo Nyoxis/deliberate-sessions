@@ -61,7 +61,7 @@ function createCustomExecutor(dbClient) {
 ## Instructions for `SqliteStore`
 
 The `SqliteStore` expects the executor function to execute the query and return
-the rows as **raw arrays** (e.g., `[[ "session-data-json" ]]`).
+the rows as **objects** (records) mapping column name to value (e.g., `[{ data: "session-data-json" }]`).
 
 ### Constructor Parameters & Autocreation
 
@@ -80,7 +80,7 @@ No manual table initialization is required.
 
 ### 1. Deno (`jsr:@db/sqlite`)
 
-Deno's SQLite driver natively supports template strings out-of-the-box using the
+Deno's SQLite driver natively supports template strings and returns row objects out-of-the-box using the
 `db.sql` property. No wrapping is required:
 
 ```typescript
@@ -94,7 +94,7 @@ const store = new SqliteStore(db.sql.bind(db))
 ### 2. Native Node.js (`node:sqlite`)
 
 Node.js 22.5+ includes a native SQLite module. We wrap it using `statement.sql`
-(which yields `?` placeholders):
+(which yields `?` placeholders) and return row objects via `.all()`:
 
 ```typescript
 import { DatabaseSync } from 'node:sqlite'
@@ -106,8 +106,7 @@ const db = new DatabaseSync('./database.db')
 const sql = (strings: TemplateStringsArray, ...values: any[]) => {
   const statement = SQL(strings, ...values)
   const stmt = db.prepare(statement.sql)
-  stmt.setReturnArrays(true) // Return raw arrays of rows: [ [data] ]
-  return stmt.all(...statement.values)
+  return stmt.all(...statement.values) // Returns array of row objects
 }
 
 const store = new SqliteStore(sql)
@@ -116,7 +115,7 @@ const store = new SqliteStore(sql)
 ### 3. Bun (`bun:sqlite`)
 
 Bun's native `Database` driver can be wrapped in a similar fashion using
-`db.prepare(..).values(..)` to return raw arrays:
+`db.prepare(..).all(..)` to return row objects:
 
 ```typescript
 import { Database } from 'bun:sqlite'
@@ -127,7 +126,7 @@ const db = new Database('./database.db')
 
 const sql = (strings: TemplateStringsArray, ...values: any[]) => {
   const statement = SQL(strings, ...values)
-  return db.prepare(statement.sql).values(...statement.values) // Returns [ [data] ]
+  return db.prepare(statement.sql).all(...statement.values) // Returns [ { data } ]
 }
 
 const store = new SqliteStore(sql)
@@ -135,7 +134,7 @@ const store = new SqliteStore(sql)
 
 ### 4. `better-sqlite3` (npm)
 
-If using `better-sqlite3` on Node, use `.raw().all()` to output raw arrays:
+If using `better-sqlite3` on Node, use `.all()` to output row objects:
 
 ```typescript
 import Database from 'better-sqlite3'
@@ -147,7 +146,7 @@ const db = new Database('database.db')
 const sql = (strings: TemplateStringsArray, ...values: any[]) => {
   const statement = SQL(strings, ...values)
   const stmt = db.prepare(statement.sql)
-  return stmt.raw().all(...statement.values) // Returns [ [data] ]
+  return stmt.all(...statement.values) // Returns [ { data } ]
 }
 
 const store = new SqliteStore(sql)

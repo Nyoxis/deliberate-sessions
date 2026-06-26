@@ -75,7 +75,8 @@ async function createMongoStore() {
     'https://deno.land/x/mongo@v0.34.0/mod.ts'
   )
   const client = new MongoClient()
-  const mongo = await client.connect('mongodb://localhost:27017')
+  await client.connect('mongodb://localhost:27017')
+  const mongo = client.database('test')
   return new MongoStore(mongo)
 }
 

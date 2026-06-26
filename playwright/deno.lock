@@ -375,7 +375,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
-        "npm:@playwright/test@^1.38.0",
+        "npm:@playwright/test@^1.49.1",
         "npm:@types/node@^20.6.0"
       ]
     }

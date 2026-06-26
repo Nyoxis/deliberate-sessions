@@ -51,7 +51,6 @@ async function createSQLiteStore() {
   const sql = (fragments: any, ...values: any[]) => {
     const statement = SQL(fragments, ...values)
     const stmt = db.prepare(statement.sql)
-    stmt.setReturnArrays(true)
     return stmt.all(...statement.values)
   }
 
