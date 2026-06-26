@@ -57,7 +57,7 @@ export function runtimeCommand() {
     if (store === 'cookie' || store === 'memory') {
       webServers.push({
         command:
-          `cd ../test/hono/deno && STORE=${store} DENO_DIR=/home/Nyoxis/.cache/deno deno run --no-check -A server_deno.ts`,
+          `cd ../test/hono/deno && STORE=${store} deno run --no-check -A server_deno.ts`,
         url: 'http://127.0.0.1:8000',
         reuseExistingServer: !process.env.CI,
       })
@@ -65,7 +65,7 @@ export function runtimeCommand() {
     // Add Oak (port 8002)
     webServers.push({
       command:
-        `cd ../test/oak && STORE=${store} DENO_DIR=/home/Nyoxis/.cache/deno deno run --no-check -A server.ts`,
+        `cd ../test/oak && STORE=${store} deno run --no-check -A server.ts`,
       url: 'http://127.0.0.1:8002',
       reuseExistingServer: !process.env.CI,
     })
