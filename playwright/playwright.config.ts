@@ -1,4 +1,5 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test'
+import { runtimeCommand } from './test_setup'
 
 /**
  * Read environment variables from file.
@@ -36,7 +37,6 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-
     // {
     //   name: 'firefox',
     //   use: { ...devices['Desktop Firefox'] },
@@ -69,9 +69,5 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'cd ../test && deno run -A server.ts',
-    url: 'http://127.0.0.1:8002',
-    reuseExistingServer: !process.env.CI,
-  },
-});
+  webServer: runtimeCommand().webServers,
+})

@@ -1,50 +1,61 @@
-import Store from './Store.ts'
-import type { Database, Collection } from "https://deno.land/x/mongo@v0.31.2/mod.ts";
+import type Store from './Store.ts'
 import type { SessionData } from '../Session.ts'
 
-interface MongoSession {
-  id: string;
-  data: SessionData;
+interface MongoDatabase {
+  collection(name: string): MongoCollection<any>
 }
 
-export default class MongoStore implements Store {
-  db: Database
-  sessions: Collection<MongoSession>
+interface MongoCollection<T> {
+  findOne(filter: object): Promise<T | undefined | null>
+  replaceOne(filter: object, replacement: T, options?: object): Promise<unknown>
+  deleteOne(filter: object): Promise<unknown>
+}
 
-  constructor(db : Database, collectionName = 'sessions') {
+interface MongoSession {
+  id: string
+  data: SessionData
+}
+
+class MongoStore implements Store {
+  db: MongoDatabase
+  sessions: MongoCollection<MongoSession>
+
+  constructor(db: MongoDatabase, collectionName = 'sessions') {
     this.db = db
-    this.sessions = db.collection(collectionName)
+    this.sessions = db.collection(collectionName) as MongoCollection<MongoSession>
   }
 
-  async getSessionById(sessionId : string) {
+  async getSessionById(sessionId: string): Promise<SessionData | null> {
     const session = await this.sessions.findOne({ id: sessionId })
 
     return session ? session.data : null
   }
 
-  async createSession(sessionId : string, initialData : SessionData) {
+  async createSession(sessionId: string, initialData: SessionData): Promise<void> {
     await this.sessions.replaceOne(
       { id: sessionId },
       {
         id: sessionId,
-        data: initialData
+        data: initialData,
       },
-      { upsert: true }
+      { upsert: true },
     )
   }
 
-  async deleteSession(sessionId : string) {
+  async deleteSession(sessionId: string): Promise<void> {
     await this.sessions.deleteOne({ id: sessionId })
   }
 
-  async persistSessionData(sessionId : string, sessionData : SessionData) {
+  async persistSessionData(sessionId: string, sessionData: SessionData): Promise<void> {
     await this.sessions.replaceOne(
       { id: sessionId },
       {
         id: sessionId,
-        data: sessionData
+        data: sessionData,
       },
-      { upsert: true }
+      { upsert: true },
     )
   }
 }
+
+export default MongoStore

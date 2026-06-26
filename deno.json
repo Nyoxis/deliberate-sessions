@@ -1,8 +1,28 @@
 {
-  "name": "@jcs224/oak-sessions",
-  "version": "9.0.0",
-  "exports": "./mod.ts",
+  "name": "@nyoxis/deliberate-sessions",
+  "version": "0.1.0",
+  "exports": {
+    ".": "./mod.ts",
+    "./oak": "./src/middlewares/oak.ts",
+    "./hono": "./src/middlewares/hono.ts",
+    "./koa": "./src/middlewares/koa.ts",
+    "./postgres-store": "./src/stores/PostgresStore.ts",
+    "./sqlite-store": "./src/stores/SqliteStore.ts",
+    "./redis-store": "./src/stores/RedisStore.ts",
+    "./mongo-store": "./src/stores/MongoStore.ts",
+    "./webdis-store": "./src/stores/WebdisStore.ts"
+  },
   "tasks": {
     "typecheck": "deno check ./mod.ts"
+  },
+  "imports": {
+    "hono": "npm:hono@^4.0.0",
+    "hono/cookie": "npm:hono@^4.0.0/cookie",
+    "hono/factory": "npm:hono@^4.0.0/factory",
+    "koa": "npm:koa@^2.15.3",
+    "cookies": "npm:cookies@^0.9.0",
+    "oak": "jsr:@oak/oak@^17.1.3",
+    "@deno/dnt": "jsr:@deno/dnt@^0.42.3",
+    "@std/path": "jsr:@std/path@^1.1.5"
   }
 }

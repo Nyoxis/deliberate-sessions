@@ -1,0 +1,10 @@
+{
+  "tasks": {
+    "dev": "deno run -A --watch server_deno.ts"
+  },
+  "imports": {
+    "@nyoxis/deliberate-sessions": "../../../mod.ts",
+    "@nyoxis/deliberate-sessions/hono": "../../../src/middlewares/hono.ts",
+    "hono": "npm:hono@^4.0.0"
+  }
+}

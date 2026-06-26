@@ -1,26 +1,31 @@
-import Store from './Store.ts'
-import { SessionData } from '../Session.ts'
+import type Store from './Store.ts'
+import type { SessionData } from '../Session.ts'
 
-export default class MemoryStore implements Store {
-  data: Map<string, SessionData>
+/**
+ * Memory storage driver class
+ */
+class MemoryStore implements Store {
+  private data: Map<string, SessionData>
 
   constructor() {
-    this.data = new Map
+    this.data = new Map()
   }
 
-  getSessionById(sessionId : string) {
-    return this.data.has(sessionId) ? this.data.get(sessionId)! : null
+  getSessionById(sid: string): SessionData | null | undefined {
+    return this.data.has(sid) ? this.data.get(sid) : null
   }
 
-  createSession(sessionId : string, initialData : SessionData) {
-    this.data.set(sessionId, initialData)
+  createSession(sid: string, initial_data: SessionData) {
+    this.data.set(sid, initial_data)
   }
 
-  deleteSession(sessionId : string) {
-    this.data.delete(sessionId)
+  deleteSession(sid: string) {
+    this.data.delete(sid)
   }
 
-  persistSessionData(sessionId : string, sessionData : SessionData) {
-    this.data.set(sessionId, sessionData)
+  persistSessionData(sid: string, session_data: SessionData) {
+    this.data.set(sid, session_data)
   }
 }
+
+export default MemoryStore

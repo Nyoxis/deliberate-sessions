@@ -1,38 +1,53 @@
-import { DB } from "https://deno.land/x/sqlite@v3.4.0/mod.ts"
-import Store from './Store.ts'
-import { SessionData } from '../Session.ts'
+import type Store from './Store.ts'
+import type { SessionData } from '../Session.ts'
 
-export default class SqliteStore implements Store {
-  db: DB
-  tableName: string
+class SqliteStore implements Store {
+  sql: (strings: TemplateStringsArray, ...values: any[]) => any
 
-  constructor(db : DB, tableName = 'sessions') {
-    this.db = db
-    this.tableName = tableName
-    this.db.query(`CREATE TABLE IF NOT EXISTS ${this.tableName} (id TEXT, data TEXT)`)
+  constructor(
+    sql: (strings: TemplateStringsArray, ...values: any[]) => any,
+    tableName = 'sessions',
+  ) {
+    // Bake the tableName into the sql function by replacing __TABLE__ in query strings
+    this.sql = (strings: TemplateStringsArray, ...values: any[]) => {
+      const newStrings = strings.map((s) => s.replace(/__TABLE__/g, tableName))
+      const templateStrings = Object.assign(newStrings, {
+        raw: newStrings,
+      }) as unknown as TemplateStringsArray
+      return sql(templateStrings, ...values)
+    }
+
+    this.sql`CREATE TABLE IF NOT EXISTS __TABLE__ (id TEXT, data TEXT)`
   }
 
-  getSessionById(sessionId : string) {
+  getSessionById(sessionId: string): SessionData | null {
     let session = ''
-    
-    for (const [sess] of this.db.query<string[]>(`SELECT data FROM ${this.tableName} WHERE id = ?`, [sessionId])) {
+
+    for (
+      const [sess] of this
+        .sql`SELECT data FROM __TABLE__ WHERE id = ${sessionId}`
+    ) {
       session = sess
     }
 
-    return session ? JSON.parse(session) as SessionData : null;
+    return session ? JSON.parse(session) as SessionData : null
   }
 
-  createSession(sessionId : string, initialData : SessionData) {
-    this.db.query(`INSERT INTO ${this.tableName} (id, data) VALUES (?, ?)`, [sessionId, JSON.stringify(initialData)]);
+  createSession(sessionId: string, initialData: SessionData): void {
+    this.sql`INSERT INTO __TABLE__ (id, data) VALUES (${sessionId}, ${
+      JSON.stringify(initialData)
+    })`
   }
 
-  deleteSession(sessionId : string) {
-    this.db.query(`DELETE FROM ${this.tableName} WHERE id = ?`, [sessionId])
+  deleteSession(sessionId: string): void {
+    this.sql`DELETE FROM __TABLE__ WHERE id = ${sessionId}`
   }
 
-  persistSessionData(sessionId : string, sessionData : SessionData) {
-    this.db.query(`UPDATE ${this.tableName} SET data = ? WHERE id = ?`, [
-      JSON.stringify(sessionData), sessionId
-    ]);
+  persistSessionData(sessionId: string, sessionData: SessionData): void {
+    this.sql`UPDATE __TABLE__ SET data = ${
+      JSON.stringify(sessionData)
+    } WHERE id = ${sessionId}`
   }
 }
+
+export default SqliteStore

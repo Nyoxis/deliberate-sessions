@@ -4,3 +4,4 @@ node_modules
 .env
 database.db
 /garbage
+/npm

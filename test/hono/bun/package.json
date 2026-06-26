@@ -1,0 +1,16 @@
+{
+  "scripts": {
+    "dev:cookie": "bun run --hot src/test_cookie.ts",
+    "dev:sqlite": "bun run --hot src/test_sqlite.ts"
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "@nyoxis/deliberate-sessions": "../../../npm",
+    "iron-webcrypto": "^2.0.0",
+    "ohash": "^2.0.3",
+    "sql-template-strings": "^2.2.2"
+  },
+  "devDependencies": {
+    "bun-types": "^0.6.2"
+  }
+}

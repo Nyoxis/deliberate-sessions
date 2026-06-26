@@ -1,0 +1,15 @@
+{
+  "tasks": {
+    "dev": "deno run -A --watch server.ts"
+  },
+  "imports": {
+    "@nyoxis/deliberate-sessions": "../../mod.ts",
+    "@nyoxis/deliberate-sessions/oak": "../../src/middlewares/oak.ts",
+    "@nyoxis/deliberate-sessions/postgres-store": "../../src/stores/PostgresStore.ts",
+    "@nyoxis/deliberate-sessions/redis-store": "../../src/stores/RedisStore.ts",
+    "@nyoxis/deliberate-sessions/sqlite-store": "../../src/stores/SqliteStore.ts",
+    "@nyoxis/deliberate-sessions/mongo-store": "../../src/stores/MongoStore.ts",
+    "@nyoxis/deliberate-sessions/webdis-store": "../../src/stores/WebdisStore.ts",
+    "oak": "jsr:@oak/oak@^17"
+  }
+}

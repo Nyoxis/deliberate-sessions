@@ -1,37 +1,57 @@
-import Store from './Store.ts'
-import type { Redis } from 'https://deno.land/x/redis@v0.27.0/mod.ts'
-import { SessionData } from '../Session.ts'
+import type Store from './Store.ts'
+import type { SessionData } from '../Session.ts'
 
-export default class RedisStore implements Store {
-  keyPrefix : string
-  db : Redis
+class RedisStore<T> implements Store {
+  keyPrefix: string
+  sendCommand: (command: string, args: any[]) => Promise<any>
+  ttl?: number
 
-  constructor(db : Redis, keyPrefix = 'session_') {
+  constructor(
+    sendCommand: (command: string, args: any[]) => Promise<any>,
+    keyPrefix = 'session_',
+    ttl?: number,
+  ) {
     this.keyPrefix = keyPrefix
-    this.db = db
+    this.sendCommand = sendCommand
+    this.ttl = ttl
   }
 
-  async getSessionById(sessionId : string) {
-    const session = await this.db.get(this.keyPrefix + sessionId)
+  async getSessionById(sessionId: string): Promise<SessionData | null> {
+    const session = await this.sendCommand('GET', [this.keyPrefix + sessionId])
 
     if (session) {
-      const sessionString = String(await this.db.get(this.keyPrefix + sessionId))
-      const value = JSON.parse(sessionString) as SessionData
+      const value = JSON.parse(String(session)) as SessionData
       return value
     } else {
       return null
     }
   }
 
-  async createSession(sessionId : string, initialData: SessionData) {
-    await this.db.set(this.keyPrefix + sessionId, JSON.stringify(initialData))
+  async createSession(sessionId: string, initialData: SessionData): Promise<void> {
+    const args: any[] = [
+      this.keyPrefix + sessionId,
+      JSON.stringify(initialData),
+    ]
+    if (this.ttl !== undefined) {
+      args.push('EX', this.ttl)
+    }
+    await this.sendCommand('SET', args)
   }
 
-  async deleteSession(sessionId : string) {
-    await this.db.del(this.keyPrefix + sessionId)
+  async deleteSession(sessionId: string): Promise<void> {
+    await this.sendCommand('DEL', [this.keyPrefix + sessionId])
   }
 
-  async persistSessionData(sessionId : string, sessionData : SessionData) {
-    await this.db.set(this.keyPrefix + sessionId, JSON.stringify(sessionData))
+  async persistSessionData(sessionId: string, sessionData: SessionData): Promise<void> {
+    const args: any[] = [
+      this.keyPrefix + sessionId,
+      JSON.stringify(sessionData),
+    ]
+    if (this.ttl !== undefined) {
+      args.push('EX', this.ttl)
+    }
+    await this.sendCommand('SET', args)
   }
 }
+
+export default RedisStore

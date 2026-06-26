@@ -1,136 +1,305 @@
 name: Playwright Tests
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 jobs:
   test-memory-store:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        JS_RUNTIME: [deno, node]
     env:
       STORE: memory
+      JS_RUNTIME: ${{ matrix.JS_RUNTIME }}
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 18
-    - uses: denoland/setup-deno@v2
-      with:
-        deno-version: v2.0.3
-    - name: Install dependencies
-      working-directory: ./playwright
-      run: npm ci
-    - name: Install Playwright Browsers
-      working-directory: ./playwright
-      run: npx playwright install chromium
-    - name: Run Playwright tests
-      working-directory: ./playwright
-      run: npx playwright test
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Build NPM Package
+        if: matrix.JS_RUNTIME != 'deno'
+        run: deno run -A scripts/build_npm.ts
+
+      - name: Install Koa Dependencies
+        if: matrix.JS_RUNTIME == 'node'
+        run: cd test/koa && npm install
+
+      - name: Install Playwright Dependencies
+        working-directory: ./playwright
+        run: npm ci
+
+      - name: Cache Playwright Browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('playwright/package-lock.json') }}
+
+      - name: Install Playwright Browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        working-directory: ./playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright System Dependencies
+        if: steps.cache-playwright.outputs.cache-hit == 'true'
+        working-directory: ./playwright
+        run: npx playwright install-deps chromium
+
+      - name: Run Playwright tests
+        working-directory: ./playwright
+        run: npx playwright test
 
   test-redis-store:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        JS_RUNTIME: [deno, node]
     env:
       STORE: redis
+      JS_RUNTIME: ${{ matrix.JS_RUNTIME }}
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 18
-    - uses: denoland/setup-deno@v2
-      with:
-        deno-version: v2.0.3
-    - name: Setup Redis
-      uses: supercharge/redis-github-action@1.4.0
-      with:
-        redis-version: 7
-    - name: Install dependencies
-      working-directory: ./playwright
-      run: npm ci
-    - name: Install Playwright Browsers
-      working-directory: ./playwright
-      run: npx playwright install chromium
-    - name: Run Playwright tests
-      working-directory: ./playwright
-      run: npx playwright test
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Setup Redis
+        uses: supercharge/redis-github-action@1.4.0
+        with:
+          redis-version: 7
+
+      - name: Build NPM Package
+        if: matrix.JS_RUNTIME != 'deno'
+        run: deno run -A scripts/build_npm.ts
+
+      - name: Install Koa Dependencies
+        if: matrix.JS_RUNTIME == 'node'
+        run: cd test/koa && npm install
+
+      - name: Install Playwright Dependencies
+        working-directory: ./playwright
+        run: npm ci
+
+      - name: Cache Playwright Browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('playwright/package-lock.json') }}
+
+      - name: Install Playwright Browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        working-directory: ./playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright System Dependencies
+        if: steps.cache-playwright.outputs.cache-hit == 'true'
+        working-directory: ./playwright
+        run: npx playwright install-deps chromium
+
+      - name: Run Playwright tests
+        working-directory: ./playwright
+        run: npx playwright test
 
   test-mongo-store:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        JS_RUNTIME: [deno, node]
     env:
       STORE: mongo
+      JS_RUNTIME: ${{ matrix.JS_RUNTIME }}
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 18
-    - uses: denoland/setup-deno@v2
-      with:
-        deno-version: v2.0.3
-    - name: Setup Mongo
-      uses: supercharge/mongodb-github-action@1.8.0
-      with:
-        mongodb-version: 6.0
-    - name: Install dependencies
-      working-directory: ./playwright
-      run: npm ci
-    - name: Install Playwright Browsers
-      working-directory: ./playwright
-      run: npx playwright install chromium
-    - name: Run Playwright tests
-      working-directory: ./playwright
-      run: npx playwright test
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Setup Mongo
+        uses: supercharge/mongodb-github-action@1.8.0
+        with:
+          mongodb-version: 6.0
+
+      - name: Build NPM Package
+        if: matrix.JS_RUNTIME != 'deno'
+        run: deno run -A scripts/build_npm.ts
+
+      - name: Install Koa Dependencies
+        if: matrix.JS_RUNTIME == 'node'
+        run: cd test/koa && npm install
+
+      - name: Install Playwright Dependencies
+        working-directory: ./playwright
+        run: npm ci
+
+      - name: Cache Playwright Browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('playwright/package-lock.json') }}
+
+      - name: Install Playwright Browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        working-directory: ./playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright System Dependencies
+        if: steps.cache-playwright.outputs.cache-hit == 'true'
+        working-directory: ./playwright
+        run: npx playwright install-deps chromium
+
+      - name: Run Playwright tests
+        working-directory: ./playwright
+        run: npx playwright test
 
   test-cookie-store:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        JS_RUNTIME: [deno, node, bun, cloudflare]
     env:
       STORE: cookie
+      JS_RUNTIME: ${{ matrix.JS_RUNTIME }}
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 18
-    - uses: denoland/setup-deno@v2
-      with:
-        deno-version: v2.0.3
-    - name: Install dependencies
-      working-directory: ./playwright
-      run: npm ci
-    - name: Install Playwright Browsers
-      working-directory: ./playwright
-      run: npx playwright install chromium
-    - name: Run Playwright tests
-      working-directory: ./playwright
-      run: npx playwright test
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Setup Bun
+        if: matrix.JS_RUNTIME == 'bun'
+        uses: oven-sh/setup-bun@v1
+
+      - name: Build NPM Package
+        if: matrix.JS_RUNTIME != 'deno'
+        run: deno run -A scripts/build_npm.ts
+
+      - name: Install Node Hono Dependencies
+        if: matrix.JS_RUNTIME == 'node'
+        run: cd test/hono/node && npm install
+      - name: Install Koa Dependencies
+        if: matrix.JS_RUNTIME == 'node'
+        run: cd test/koa && npm install
+
+      - name: Install Bun Hono Dependencies
+        if: matrix.JS_RUNTIME == 'bun'
+        run: cd test/hono/bun && bun install
+
+      - name: Install Cloudflare Worker Dependencies
+        if: matrix.JS_RUNTIME == 'cloudflare'
+        run: cd test/hono/cloudflare_workers && npm install
+      - name: Install Cloudflare Pages Dependencies
+        if: matrix.JS_RUNTIME == 'cloudflare'
+        run: cd test/hono/cloudflare_pages && npm install
+
+      - name: Install Playwright Dependencies
+        working-directory: ./playwright
+        run: npm ci
+
+      - name: Cache Playwright Browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('playwright/package-lock.json') }}
+
+      - name: Install Playwright Browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        working-directory: ./playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright System Dependencies
+        if: steps.cache-playwright.outputs.cache-hit == 'true'
+        working-directory: ./playwright
+        run: npx playwright install-deps chromium
+
+      - name: Run Playwright tests
+        working-directory: ./playwright
+        run: npx playwright test
 
   test-sqlite-store:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        JS_RUNTIME: [deno, node, bun]
     env:
       STORE: sqlite
+      JS_RUNTIME: ${{ matrix.JS_RUNTIME }}
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 18
-    - uses: denoland/setup-deno@v2
-      with:
-        deno-version: v2.0.3
-    - name: Install dependencies
-      working-directory: ./playwright
-      run: npm ci
-    - name: Install Playwright Browsers
-      working-directory: ./playwright
-      run: npx playwright install chromium
-    - name: Run Playwright tests
-      working-directory: ./playwright
-      run: npx playwright test
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Setup Bun
+        if: matrix.JS_RUNTIME == 'bun'
+        uses: oven-sh/setup-bun@v1
+
+      - name: Build NPM Package
+        if: matrix.JS_RUNTIME != 'deno'
+        run: deno run -A scripts/build_npm.ts
+
+      - name: Install Koa Dependencies
+        if: matrix.JS_RUNTIME == 'node'
+        run: cd test/koa && npm install
+
+      - name: Install Bun Hono Dependencies
+        if: matrix.JS_RUNTIME == 'bun'
+        run: cd test/hono/bun && bun install
+
+      - name: Install Playwright Dependencies
+        working-directory: ./playwright
+        run: npm ci
+
+      - name: Cache Playwright Browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('playwright/package-lock.json') }}
+
+      - name: Install Playwright Browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        working-directory: ./playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright System Dependencies
+        if: steps.cache-playwright.outputs.cache-hit == 'true'
+        working-directory: ./playwright
+        run: npx playwright install-deps chromium
+
+      - name: Run Playwright tests
+        working-directory: ./playwright
+        run: npx playwright test
 
   test-webdis-store:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        JS_RUNTIME: [deno, node]
     services:
       webdis:
         image: nicolas/webdis:0.1.20
@@ -138,27 +307,55 @@ jobs:
           - 7379:7379
     env:
       STORE: webdis
+      JS_RUNTIME: ${{ matrix.JS_RUNTIME }}
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 18
-    - uses: denoland/setup-deno@v2
-      with:
-        deno-version: v2.0.3
-    - name: Install dependencies
-      working-directory: ./playwright
-      run: npm ci
-    - name: Install Playwright Browsers
-      working-directory: ./playwright
-      run: npx playwright install chromium
-    - name: Run Playwright tests
-      working-directory: ./playwright
-      run: npx playwright test
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Build NPM Package
+        if: matrix.JS_RUNTIME != 'deno'
+        run: deno run -A scripts/build_npm.ts
+
+      - name: Install Koa Dependencies
+        if: matrix.JS_RUNTIME == 'node'
+        run: cd test/koa && npm install
+
+      - name: Install Playwright Dependencies
+        working-directory: ./playwright
+        run: npm ci
+
+      - name: Cache Playwright Browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('playwright/package-lock.json') }}
+
+      - name: Install Playwright Browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        working-directory: ./playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright System Dependencies
+        if: steps.cache-playwright.outputs.cache-hit == 'true'
+        working-directory: ./playwright
+        run: npx playwright install-deps chromium
+
+      - name: Run Playwright tests
+        working-directory: ./playwright
+        run: npx playwright test
 
   test-postgres-store:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        JS_RUNTIME: [deno, node]
     services:
       postgres:
         image: postgres
@@ -173,20 +370,45 @@ jobs:
           - 5432:5432
     env:
       STORE: postgres
+      JS_RUNTIME: ${{ matrix.JS_RUNTIME }}
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 18
-    - uses: denoland/setup-deno@v2
-      with:
-        deno-version: v2.0.3
-    - name: Install dependencies
-      working-directory: ./playwright
-      run: npm ci
-    - name: Install Playwright Browsers
-      working-directory: ./playwright
-      run: npx playwright install chromium
-    - name: Run Playwright tests
-      working-directory: ./playwright
-      run: npx playwright test
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Build NPM Package
+        if: matrix.JS_RUNTIME != 'deno'
+        run: deno run -A scripts/build_npm.ts
+
+      - name: Install Koa Dependencies
+        if: matrix.JS_RUNTIME == 'node'
+        run: cd test/koa && npm install
+
+      - name: Install Playwright Dependencies
+        working-directory: ./playwright
+        run: npm ci
+
+      - name: Cache Playwright Browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('playwright/package-lock.json') }}
+
+      - name: Install Playwright Browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        working-directory: ./playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright System Dependencies
+        if: steps.cache-playwright.outputs.cache-hit == 'true'
+        working-directory: ./playwright
+        run: npx playwright install-deps chromium
+
+      - name: Run Playwright tests
+        working-directory: ./playwright
+        run: npx playwright test

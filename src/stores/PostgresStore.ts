@@ -1,37 +1,49 @@
-import Store from './Store.ts'
-import { SessionData } from '../Session.ts'
-import type postgres from "https://deno.land/x/postgresjs@v3.2.4/mod.js";
+import type Store from './Store.ts'
+import type { SessionData } from '../Session.ts'
 
-// deno-lint-ignore ban-types
-type SQLExecutor = postgres.Sql<{}>;
+class PostgresStore implements Store {
+  sql: (strings: TemplateStringsArray, ...values: any[]) => any
 
-export default class PostgresStore implements Store {
-  sql: SQLExecutor
-  tableName: string
-
-  constructor(sql: SQLExecutor, tableName = 'sessions') {
-    this.sql = sql
-    this.tableName = tableName
+  constructor(
+    sql: (strings: TemplateStringsArray, ...values: any[]) => any,
+    tableName = 'sessions',
+  ) {
+    // Bake the tableName into the sql function by replacing __TABLE__ in query strings
+    this.sql = (strings: TemplateStringsArray, ...values: any[]) => {
+      const newStrings = strings.map((s) => s.replace(/__TABLE__/g, tableName))
+      const templateStrings = Object.assign(newStrings, {
+        raw: newStrings,
+      }) as unknown as TemplateStringsArray
+      return sql(templateStrings, ...values)
+    }
   }
 
   async initSessionsTable() {
-    await this.sql`create table if not exists ${this.sql(this.tableName)} (id varchar(21) not null primary key, data varchar)`;
+    await this
+      .sql`create table if not exists __TABLE__ (id varchar not null primary key, data varchar)`
   }
 
-  async getSessionById(sessionId: string) {
-    const result = await this.sql`select data from ${this.sql(this.tableName)} where id = ${sessionId}`
+  async getSessionById(sessionId: string): Promise<SessionData | null> {
+    const result = await this
+      .sql`select data from __TABLE__ where id = ${sessionId}`
     return result.length > 0 ? JSON.parse(result[0].data) as SessionData : null
   }
 
-  async createSession(sessionId : string, initialData : SessionData) {
-    await this.sql`insert into ${this.sql(this.tableName)} (id, data) values (${sessionId}, ${JSON.stringify(initialData)})`
+  async createSession(sessionId: string, initialData: SessionData): Promise<void> {
+    await this.sql`insert into __TABLE__ (id, data) values (${sessionId}, ${
+      JSON.stringify(initialData)
+    })`
   }
 
-  async deleteSession(sessionId: string) {
-    await this.sql`delete from ${this.sql(this.tableName)} where id = ${sessionId}`
+  async deleteSession(sessionId: string): Promise<void> {
+    await this.sql`delete from __TABLE__ where id = ${sessionId}`
   }
 
-  async persistSessionData(sessionId : string, sessionData : SessionData) {
-    await this.sql`update ${this.sql(this.tableName)} set data = ${JSON.stringify(sessionData)} where id = ${sessionId}`
+  async persistSessionData(sessionId: string, sessionData: SessionData): Promise<void> {
+    await this.sql`update __TABLE__ set data = ${
+      JSON.stringify(sessionData)
+    } where id = ${sessionId}`
   }
 }
+
+export default PostgresStore
